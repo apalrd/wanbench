@@ -1,5 +1,6 @@
-# DHCPv6 Server Code
-from scapy.layers import dhcp6
+# DHCP Server Code
+from scapy.all import *
+import socket
 
 class dhcp_srv:
     # Validate arguments
@@ -9,11 +10,21 @@ class dhcp_srv:
         #Validation successful
         return super().__new__(cls)
     
-    def __init__(self):
+    def __init__(self,args):
+        self.interface = args.interface
+
+    def send_ra(self):
+        # Send periodic Router Advertisements
         pass
 
-    def setup(self):
-        pass
+    def setup(self,gwan:array):
+        # Bind to IPv4 broadcast and IPv6 DHCPv6 multicast
+
+        print("[+] Sniff started")
+        sniff(store=0, prn=self.printer, iface=self.interface)
+
+    def printer(self,packet):
+        print("Packet Received:",packet)
 
     def __del__(self):
         pass
