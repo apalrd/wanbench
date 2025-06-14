@@ -6,6 +6,7 @@ from pyroute2 import IPRoute
 import ipaddress
 import atexit
 import dslite
+from native import dualstack, cgnat
 from utils import wan_type,route,ipr
 from dhcp import dhcp_srv
 
@@ -22,6 +23,7 @@ parser.add_argument("-l","--legacy",help="Legacy global address")
 parser.add_argument("-n","--nat",help="Perform NAT44/NAT66 to global addresses",action="store_true")
 parser.add_argument("-r","--reuse",help="Reuse factor for A+P Routing")
 parser.add_argument("--fargw",help="Far Gateway Address for DHCPv4")
+parser.add_argument("--aftr",help="Address of the DSLite AFTR function")
 parser.add_argument("--cgnat",help="CGNAT prefix to use")
 parser.add_argument("--mapinv",help="For MAP, the number of invalid/unallocated ports")
 parser.add_argument("--pref64",help="For 464xlat, RFC6052 translation prefix")
@@ -47,8 +49,6 @@ else:
         print(f"Prefix length {args.prefix.prefixlen} is not at least 1 subnet")
         will_exit = True
 
-if args.fargw is None: args.fargw = "100.64.0.1"
-if args.cgnat is None: args.cgnat = "100.69.96.0/24"
 if args.mapinv is None: args.mapinv = "1024"
 if args.pref64 is None: args.pref64 = "64:ff9b::/96"
 if args.dmr is None: args.dmr = "2001:db8:6464::/64"
@@ -60,12 +60,6 @@ elif not args.size.isnumeric():
     print(f"Size {args.size} is invalid")
 elif args.size > 64:
     print(f"Size {args.size} is not at least 1 subnet")
-
-# Validate Legacy
-if args.legacy is None:
-    args.legacy = ipaddress.ip_interface("203.0.113.5/24")
-else:
-    args.legacy = ipaddress.ip_interface(args.legacy)
 
 # Validate Reuse
 if args.reuse is None:
@@ -90,12 +84,19 @@ if args.type is None:
     will_exit = True
     print("Missing required argument Type")
 else:
+    # Check if we have invalid combinations
+
     if "dualstack" in args.type:
         print("Type DualStack")
         args.type.remove("dualstack")
+        gwan.append(dualstack(args))
+        if "cgnat" in args.type:
+            print("Cannot have both Dual-Stack and CGNAT, removing CGNAT")
+            args.type.remove("cgnat")
     if "cgnat" in args.type:
         print("Type CGNAT")
         args.type.remove("cgnat")
+        gwan.append(cgnat(args))
     if "dslite" in args.type:
         print("Type DS-Lite")
         args.type.remove("dslite")
