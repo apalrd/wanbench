@@ -54,5 +54,8 @@ class wan_type:
         pass
     def setup(self):
         pass
+    # Parse a DHCPv6 packet to see if this wan type is supported
+    def supported(self,pkt):
+        return False
     def __del__(self):
         pass

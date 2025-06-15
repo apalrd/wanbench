@@ -5,10 +5,11 @@ import argparse
 from pyroute2 import IPRoute
 import ipaddress
 import atexit
-import dslite
+from softwire import dslite, mapt, mape, lw4o6
 from native import dualstack, cgnat
 from utils import wan_type,route,ipr
 from dhcp import dhcp_srv
+import xlat464
 
 # Main
 parser = argparse.ArgumentParser(prog='wanbench',description='A tool for setting up simulated WAN interfaces for router testing')
@@ -84,8 +85,47 @@ if args.type is None:
     will_exit = True
     print("Missing required argument Type")
 else:
-    # Check if we have invalid combinations
-
+    # Only allow one Softwire type at a time (map-t, map-e, lw4o6, dslite)
+    if "mapt" in args.type:
+        print("Type MAP-T")
+        args.type.remove("mapt")
+        gwan.append(mapt(args))
+        if "mape" in args.type:
+            print("Cannot have MAP-T and MAP-E, removing MAP-E")
+            args.type.remove("mape")
+        if "lw4o6" in args.type:
+            print("Cannot have MAP-T and Lightweight4over6, removing lw4o6")
+            args.type.remove("lw4o6")
+        if "dslite" in args.type:
+            print("Cannot have MAP-T and DSLite, removing DSLite")
+            args.type.remove("dslite")
+    if "mape" in args.type:
+        print("Type MAP-E")
+        args.type.remove("mape")
+        gwan.append(mape(args))
+        if "lw4o6" in args.type:
+            print("Cannot have MAP-E and Lightweight4over6, removing lw4o6")
+            args.type.remove("lw4o6")
+        if "dslite" in args.type:
+            print("Cannot have MAP-E and DSLite, removing DSLite")
+            args.type.remove("dslite")
+    if "lw4o6" in args.type:
+        print("Type Lightweight4over6")
+        args.type.remove("lw4o6")
+        gwan.append(lw4o6(args))
+        if "dslite" in args.type:
+            print("Cannot have Lightweight4over6 and DSLite, removing DSLite")
+            args.type.remove("dslite")
+    if "dslite" in args.type:
+        print("Type DS-Lite")
+        args.type.remove("dslite")
+        gwan.append(dslite(args))
+    # 464xlat is always allowed to be combined
+    if "464xlat" in args.type:
+        print("Type 464XLAT")
+        args.type.remove("464xlat")
+        gwan.append(xlat464.xlat464(args))
+    # Only one Native v4 is allowed at a time
     if "dualstack" in args.type:
         print("Type DualStack")
         args.type.remove("dualstack")
@@ -97,30 +137,17 @@ else:
         print("Type CGNAT")
         args.type.remove("cgnat")
         gwan.append(cgnat(args))
-    if "dslite" in args.type:
-        print("Type DS-Lite")
-        args.type.remove("dslite")
-        gwan.append(dslite.dslite(args))
-    if "lw4o6" in args.type:
-        print("Type Lightweight4over6")
-        args.type.remove("lw4o6")
-    if "mape" in args.type:
-        print("Type MAP-E")
-        args.type.remove("mape")
-    if "mapt" in args.type:
-        print("Type MAP-T")
-        args.type.remove("mapt")
-    if "464xlat" in args.type:
-        print("Type 464XLAT")
-        args.type.remove("464xlat")
-    if "pppoe" in args.type:
-        print("Type PPPoE")
-        args.type.remove("pppoe")
+    # Unknown Type
     if len(args.type) > 0:
+        will_exit = True
         print("Unknown Types:",args.type)
 
 # Validate DHCP Server
 dhcp = dhcp_srv(args)
+
+# Ensure all wans are valid
+for wan in gwan:
+    if wan is None: will_exit = True
 
 # Error, print help and exit
 if will_exit or len(gwan) == 0 or dhcp is None:

@@ -11,7 +11,7 @@ This is designed to run on a Linux system with the following requirements:
 | Option | Default | Description |
 | -- | -- | -- |
 | `-i`, `--interface` | | Linux device name of downstream (CPE-facing) Ethernet interface |
-| `-t`, `--type` | | Type of interface(s) to simulate. May be specified multiple times. When the client supports multiple types, the order of arguments determines the preference. Must be one of: `dualstack` `cgnat` `dslite` `lw4o6` `mape` `mapt` `464xlat` |
+| `-t`, `--type` | | Type of interface(s) to simulate. May be specified multiple times to enable multiple options. Not all combinations are valid. Must be one of: `dualstack` `cgnat` `dslite` `lw4o6` `mape` `mapt` `464xlat` |
 | `-d`, `--debug` | | Print out a significant amount of debug information 
 | `-p`, `--prefix` | `2001:db8::/36` | Prefix from which to generate DHCPv6-PD allocation to the client. The client's allocation will be a subset of this prefix, calculated according to the interface type setup. |
 | `-s`, `--size` | `56` | Prefix size to delegate to the client using DHCPv6-PD |

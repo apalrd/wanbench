@@ -1,15 +1,16 @@
 #!/usr/bin/python3
-#Simulation for DS-Lite
+#Simulation for 464xlat
 from utils import wan_type, route, ipr, addr
 import ipaddress
 
-class dslite(wan_type):
+
+class xlat464(wan_type):
     # Validate arguments
     def __new__(cls, args):
         # Validate that it is an IP
         if args.aftr is not None:
             try:
-                temp = ipaddress.ip_address(args.aftr)
+                ipaddress.ip_address(args.aftr)
             except:
                 return None
         #Validation successful
